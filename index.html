@@ -171,7 +171,7 @@ const qualityPresets={
 };
 
 document.querySelectorAll('input[name="mode"]').forEach(r=>r.addEventListener('change',()=>{
-  qualityGroup.classList.toggle('show',r.value==='mp4');
+  qualityGroup.classList.add('show');
 }));
 
 convertBtn.addEventListener('click',async()=>{
@@ -187,8 +187,8 @@ convertBtn.addEventListener('click',async()=>{
   setProgress(0,'FFmpeg yükleniyor...');
 
   try{
-    // fetchFile her tıklamada lazım — if dışında import et
-    const{fetchFile}=await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/+esm');
+    // fetchFile: File -> Uint8Array (CDN bagimliligi yok)
+    const fetchFile=async(file)=>new Uint8Array(await file.arrayBuffer());
 
     if(!loaded){
       showStatus('FFmpeg wasm yükleniyor — ilk sefer 10-20 sn sürebilir...');
