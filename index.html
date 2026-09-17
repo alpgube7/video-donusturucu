@@ -187,14 +187,14 @@ convertBtn.addEventListener('click',async()=>{
   setProgress(0,'FFmpeg yükleniyor...');
 
   try{
+    // fetchFile her tıklamada lazım — if dışında import et
+    const{fetchFile}=await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/+esm');
+
     if(!loaded){
       showStatus('FFmpeg wasm yükleniyor — ilk sefer 10-20 sn sürebilir...');
       addLog('FFmpeg indiriliyor...');
 
-      // FFmpeg modullerini tamamen localden yukle
       const{FFmpeg}=await import('./ffmpeg/index.js');
-      // fetchFile sayfa seviyesinde CDN'den — CORS sadece Worker'da sorun
-      const{fetchFile}=await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/+esm');
 
       ffmpeg=new FFmpeg();
 
