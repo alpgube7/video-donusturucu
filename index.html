@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Dönüştürücü — Ücretsiz & Limitsiz</title>
+<meta name="description" content="Herhangi bir videoyu MP4 veya MP3'e dönüştürün. Ücretsiz, sınırsız, tarayıcıda çalışır.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f0f13;--surface:#1a1a24;--border:#2a2a3a;--accent:#6c5ce7;--accent2:#a29bfe;--text:#e8e8f0;--muted:#8888a0;--success:#00cec9;--error:#ff6b6b;--radius:12px}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px}
+h1{font-size:clamp(1.5rem,4vw,2.2rem);font-weight:700;text-align:center;margin:30px 0 6px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{text-align:center;color:var(--muted);margin-bottom:30px;font-size:0.95rem}
+.container{width:100%;max-width:640px}
+.drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:50px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface)}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:#1e1e30}
+.drop-zone .icon{font-size:3rem;margin-bottom:12px}
+.drop-zone p{color:var(--muted);font-size:0.95rem}
+.drop-zone .formats{color:var(--accent2);font-size:0.8rem;margin-top:8px}
+input[type=file]{display:none}
+.file-info{display:none;margin:16px 0;padding:14px 18px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);align-items:center;gap:12px}
+.file-info.show{display:flex}
+.file-info .name{flex:1;font-size:0.9rem;word-break:break-all}
+.file-info .size{color:var(--muted);font-size:0.8rem;white-space:nowrap}
+.file-info .remove{background:none;border:none;color:var(--error);cursor:pointer;font-size:1.2rem;padding:0 4px}
+.options{display:none;margin:16px 0}
+.options.show{display:block}
+.option-group{margin-bottom:14px}
+.option-group label{display:block;font-size:0.85rem;color:var(--muted);margin-bottom:6px}
+.radio-group{display:flex;gap:10px;flex-wrap:wrap}
+.radio-group label{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .2s;font-size:0.9rem;color:var(--text)}
+.radio-group label:hover{border-color:var(--accent)}
+.radio-group input:checked+span{color:var(--accent2);font-weight:600}
+.radio-group input{accent-color:var(--accent)}
+.quality-group{display:none;margin-top:12px}
+.quality-group.show{display:block}
+select{width:100%;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.9rem;cursor:pointer}
+select:focus{outline:none;border-color:var(--accent)}
+.btn{width:100%;padding:14px;border:none;border-radius:var(--radius);font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:16px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#7c6cf0);color:#fff}
+.btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 20px rgba(108,92,231,.3)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-download{background:linear-gradient(135deg,var(--success),#00b894);color:#fff;display:none}
+.btn-download:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,206,201,.3)}
+.progress-wrap{display:none;margin:16px 0}
+.progress-wrap.show{display:block}
+.progress-bar{width:100%;height:8px;background:var(--surface);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;transition:width .3s;width:0}
+.progress-text{font-size:0.85rem;color:var(--muted);margin-top:6px;text-align:center}
+.status{display:none;margin:12px 0;padding:12px 16px;border-radius:8px;font-size:0.9rem;text-align:center}
+.status.show{display:block}
+.status.success{background:#00cec920;border:1px solid #00cec940;color:var(--success)}
+.status.error{background:#ff6b6b20;border:1px solid #ff6b6b40;color:var(--error)}
+.status.loading{background:#6c5ce720;border:1px solid #6c5ce740;color:var(--accent2)}
+.footer{margin-top:40px;padding:20px;text-align:center;color:var(--muted);font-size:0.8rem}
+.footer a{color:var(--accent2);text-decoration:none}
+.log{display:none;margin:12px 0;padding:12px;background:var(--surface);border-radius:8px;max-height:120px;overflow-y:auto;font-family:monospace;font-size:0.75rem;color:var(--muted);border:1px solid var(--border)}
+.log.show{display:block}
+.log p{margin:2px 0}
+</style>
+</head>
+<body>
+<h1>Video Dönüştürücü</h1>
+<p class="subtitle">Herhangi bir videoyu MP4 veya MP3'e dönüştürün — tamamen ücretsiz, tarayıcıda çalışır</p>
+<div class="container">
+  <div class="drop-zone" id="dropZone">
+    <div class="icon">🎬</div>
+    <p>Dosyayı sürükle & bırak veya tıkla</p>
+    <div class="formats">MP4, AVI, MKV, MOV, WEBM, FLV, WMV, 3GP, M4V, OGG, WAV, MP3, ve daha fazlası</div>
+  </div>
+  <input type="file" id="fileInput" accept="video/*,audio/*,.mp4,.avi,.mkv,.mov,.webm,.flv,.wmv,.3gp,.m4v,.ogg,.wav,.mp3">
+  <div class="file-info" id="fileInfo">
+    <span class="name" id="fileName"></span>
+    <span class="size" id="fileSize"></span>
+    <button class="remove" id="removeBtn" title="Kaldır">✕</button>
+  </div>
+  <div class="options" id="options">
+    <div class="option-group">
+      <label>Dönüşüm türü</label>
+      <div class="radio-group">
+        <label><input type="radio" name="mode" value="mp4" checked><span>🎬 Video → MP4</span></label>
+        <label><input type="radio" name="mode" value="mp3"><span>🎵 Video → MP3 (Ses)</span></label>
+      </div>
+    </div>
+    <div class="quality-group" id="qualityGroup">
+      <div class="option-group">
+        <label>Kalite</label>
+        <select id="quality">
+          <option value="high">Yüksek (orijinale yakın)</option>
+          <option value="medium" selected>Orta (dengeli)</option>
+          <option value="low">Düşük (daha küçük dosya)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-primary" id="convertBtn" disabled>Dönüştür</button>
+  <button class="btn btn-download" id="downloadBtn">⬇ İndir</button>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-text" id="progressText">Hazırlanıyor...</div>
+  </div>
+  <div class="status" id="status"></div>
+  <div class="log" id="log"></div>
+</div>
+<div class="footer">
+  Tüm işlemler tarayıcınızda yapılır — dosyalar sunucuya gönderilmez.<br>
+  <a href="https://github.com/aydannadya31" target="_blank">GitHub</a>
+</div>
+
+<script type="module">
+const dropZone=document.getElementById('dropZone'),fileInput=document.getElementById('fileInput'),
+fileInfo=document.getElementById('fileInfo'),fileName=document.getElementById('fileName'),
+fileSize=document.getElementById('fileSize'),removeBtn=document.getElementById('removeBtn'),
+options=document.getElementById('options'),convertBtn=document.getElementById('convertBtn'),
+downloadBtn=document.getElementById('downloadBtn'),progressWrap=document.getElementById('progressWrap'),
+progressFill=document.getElementById('progressFill'),progressText=document.getElementById('progressText'),
+status=document.getElementById('status'),log=document.getElementById('log'),
+qualityGroup=document.getElementById('qualityGroup');
+
+let ffmpeg=null,loaded=false,selectedFile=null,outputUrl=null,outputName='';
+
+const formatSize=b=>{if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';if(b<1073741824)return(b/1048576).toFixed(1)+' MB';return(b/1073741824).toFixed(2)+' GB'};
+
+function showStatus(msg,type='loading'){status.className='status show '+type;status.textContent=msg}
+function hideStatus(){status.className='status'}
+function addLog(msg){log.classList.add('show');const p=document.createElement('p');p.textContent=msg;log.appendChild(p);log.scrollTop=log.scrollHeight}
+function setProgress(pct,text){progressWrap.classList.add('show');progressFill.style.width=pct+'%';if(text)progressText.textContent=text}
+
+dropZone.addEventListener('click',()=>fileInput.click());
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('dragover')});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('dragover');if(e.dataTransfer.files.length)handleFile(e.dataTransfer.files[0])});
+fileInput.addEventListener('change',e=>{if(e.target.files.length)handleFile(e.target.files[0])});
+removeBtn.addEventListener('click',resetAll);
+
+function handleFile(file){
+  selectedFile=file;
+  fileName.textContent=file.name;
+  fileSize.textContent=formatSize(file.size);
+  fileInfo.classList.add('show');
+  options.classList.add('show');
+  convertBtn.disabled=false;
+  dropZone.style.display='none';
+  hideStatus();
+  downloadBtn.style.display='none';
+  log.innerHTML='';log.classList.remove('show');
+  progressWrap.classList.remove('show');
+}
+
+function resetAll(){
+  selectedFile=null;loaded=false;ffmpeg=null;
+  fileInput.value='';
+  fileInfo.classList.remove('show');
+  options.classList.remove('show');
+  convertBtn.disabled=true;
+  dropZone.style.display='';
+  hideStatus();
+  downloadBtn.style.display='none';
+  progressWrap.classList.remove('show');
+  log.innerHTML='';log.classList.remove('show');
+  if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null}
+}
+
+const qualityPresets={
+  mp4:{high:['-c:v','libx264','-crf','18','-preset','fast','-c:a','aac','-b:a','192k'],
+       medium:['-c:v','libx264','-crf','23','-preset','fast','-c:a','aac','-b:a','128k'],
+       low:['-c:v','libx264','-crf','28','-preset','ultrafast','-c:a','aac','-b:a','96k']},
+  mp3:{high:['-vn','-c:a','libmp3lame','-q:a','2'],
+       medium:['-vn','-c:a','libmp3lame','-q:a','4'],
+       low:['-vn','-c:a','libmp3lame','-q:a','7']}
+};
+
+document.querySelectorAll('input[name="mode"]').forEach(r=>r.addEventListener('change',()=>{
+  qualityGroup.classList.toggle('show',r.value==='mp4');
+}));
+
+convertBtn.addEventListener('click',async()=>{
+  if(!selectedFile)return;
+  const mode=document.querySelector('input[name="mode"]:checked').value;
+  const quality=document.getElementById('quality').value;
+  const ext=mode==='mp4'?'.mp4':'.mp3';
+  outputName=selectedFile.name.replace(/\.[^.]+$/,'')+ext;
+
+  convertBtn.disabled=true;
+  downloadBtn.style.display='none';
+  hideStatus();
+  setProgress(0,'FFmpeg yükleniyor...');
+
+  try{
+    if(!loaded){
+      showStatus('FFmpeg wasm yükleniyor — ilk sefer 10-20 sn sürebilir...');
+      addLog('FFmpeg indiriliyor...');
+
+      const{FFmpeg}=await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/+esm');
+      const{fetchFile}=await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/+esm');
+
+      ffmpeg=new FFmpeg();
+
+      ffmpeg.on('log',({message})=>addLog(message));
+      ffmpeg.on('progress',({progress})=>{
+        const pct=Math.round(progress*100);
+        setProgress(pct,`Dönüştürülüyor... %${pct}`);
+      });
+
+      const coreBase='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+      await ffmpeg.load({
+        coreURL:`${coreBase}/ffmpeg-core.js`,
+        wasmURL:`${coreBase}/ffmpeg-core.wasm`,
+      });
+
+      loaded=true;
+      addLog('FFmpeg başarıyla yüklendi!');
+      setProgress(5,'FFmpeg hazır');
+    }
+
+    setProgress(10,'Dosya okunuyor...');
+    addLog(`Dosya: ${selectedFile.name} (${formatSize(selectedFile.size)})`);
+    addLog(`Mod: ${mode.toUpperCase()} | Kalite: ${quality}`);
+
+    const inputData=await fetchFile(selectedFile);
+    await ffmpeg.writeFile('input'+selectedFile.name.match(/\.[^.]+$/)[0],inputData);
+
+    const args=['-i','input'+selectedFile.name.match(/\.[^.]+$/)[0],...qualityPresets[mode][quality],'output'+ext];
+    addLog('Komut: ffmpeg '+args.join(' '));
+
+    setProgress(15,'Dönüştürme başlıyor...');
+    await ffmpeg.exec(args);
+
+    const data=await ffmpeg.readFile('output'+ext);
+    if(outputUrl)URL.revokeObjectURL(outputUrl);
+    outputUrl=URL.createObjectURL(new Blob([data.buffer],{type:mode==='mp4'?'video/mp4':'audio/mpeg'}));
+
+    setProgress(100,'Tamamlandı!');
+    showStatus(`✅ ${outputName} — ${formatSize(data.length)} — hazır!`,'success');
+    downloadBtn.style.display='block';
+    downloadBtn.onclick=()=>{
+      const a=document.createElement('a');a.href=outputUrl;a.download=outputName;a.click();
+    };
+
+    try{await ffmpeg.deleteFile('input'+selectedFile.name.match(/\.[^.]+$/)[0]);}catch{}
+    try{await ffmpeg.deleteFile('output'+ext);}catch{}
+
+  }catch(err){
+    showStatus('❌ Hata: '+err.message,'error');
+    addLog('HATA: '+err.message);
+    console.error(err);
+  }finally{
+    convertBtn.disabled=false;
+  }
+});
+</script>
+</body>
+</html>
