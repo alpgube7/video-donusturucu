@@ -191,8 +191,9 @@ convertBtn.addEventListener('click',async()=>{
       showStatus('FFmpeg wasm yükleniyor — ilk sefer 10-20 sn sürebilir...');
       addLog('FFmpeg indiriliyor...');
 
-      const{FFmpeg}=await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/+esm');
-      const{fetchFile}=await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/+esm');
+      // FFmpeg modullerini tamamen localden yukle
+      const{FFmpeg}=await import('./ffmpeg/index.js');
+      const{fetchFile}=await import('./ffmpeg/utils.js');
 
       ffmpeg=new FFmpeg();
 
@@ -202,11 +203,17 @@ convertBtn.addEventListener('click',async()=>{
         setProgress(pct,`Dönüştürülüyor... %${pct}`);
       });
 
+      // Worker same-origin'den (CORS sorunu yok), core CDN'den fetch ile blob URL
+      const workerURL=new URL('./ffmpeg/worker.js',location.href).href;
       const coreBase='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
-      await ffmpeg.load({
-        coreURL:`${coreBase}/ffmpeg-core.js`,
-        wasmURL:`${coreBase}/ffmpeg-core.wasm`,
-      });
+      const coreResp=await fetch(`${coreBase}/ffmpeg-core.js`);
+      const coreBlob=await coreResp.blob();
+      const coreURL=URL.createObjectURL(coreBlob);
+      const wasmResp=await fetch(`${coreBase}/ffmpeg-core.wasm`);
+      const wasmBlob=await wasmResp.blob();
+      const wasmURL=URL.createObjectURL(wasmBlob);
+
+      await ffmpeg.load({coreURL,wasmURL,workerURL});
 
       loaded=true;
       addLog('FFmpeg başarıyla yüklendi!');
