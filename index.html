@@ -91,6 +91,15 @@ select:focus{outline:none;border-color:var(--accent)}
           <option value="low">Düşük (daha küçük dosya)</option>
         </select>
       </div>
+      <div class="option-group" id="resolutionGroup">
+        <label>Çözünürlük (hız için küçült)</label>
+        <select id="resolution">
+          <option value="original">Orijinal</option>
+          <option value="1080">1080p</option>
+          <option value="720">720p (hızlı)</option>
+          <option value="480">480p (çok hızlı)</option>
+        </select>
+      </div>
     </div>
   </div>
   <button class="btn btn-primary" id="convertBtn" disabled>Dönüştür</button>
@@ -104,6 +113,7 @@ select:focus{outline:none;border-color:var(--accent)}
 </div>
 <div class="footer">
   Tüm işlemler tarayıcınızda yapılır — dosyalar sunucuya gönderilmez.<br>
+  Hız istersen: <code>python server.py</code> ile yerel sunucu çalıştır (çoklu çekirdek).<br>
   <a href="https://github.com/aydannadya31" target="_blank">GitHub</a>
 </div>
 
@@ -179,6 +189,7 @@ convertBtn.addEventListener('click',async()=>{
   if(!selectedFile)return;
   const mode=document.querySelector('input[name="mode"]:checked').value;
   const quality=document.getElementById('quality').value;
+  const resolution=document.getElementById('resolution').value;
   const ext=mode==='mp4'?'.mp4':'.mp3';
   outputName=selectedFile.name.replace(/\.[^.]+$/,'')+ext;
 
@@ -207,7 +218,18 @@ convertBtn.addEventListener('click',async()=>{
 
       // classWorkerURL: FFmpeg.load() parametresi bu ismi bekliyor, mutlak URL olmali
       const classWorkerURL=new URL('./ffmpeg/worker.js',location.href).href;
-      const coreBase='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+      // SharedArrayBuffer mevcutsa (COOP/COEP basliklari) multi-threaded kullan
+      const isMultiThread=typeof SharedArrayBuffer!=='undefined';
+      let coreBase;
+      if(isMultiThread){
+        // Yerel sunucu core-mt dosyalarini sunuyor
+        coreBase=new URL('./core-mt',location.href).href;
+        addLog('Çoklu çekirdek modu aktif! CPU tam güçte çalışacak.');
+      }else{
+        // GitHub Pages — tek çekirdek
+        coreBase='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+        addLog('Tek çekirdek modu. Hız için: python server.py ile yerel sunucu çalıştır.');
+      }
       const coreResp=await fetch(`${coreBase}/ffmpeg-core.js`);
       const coreBlob=await coreResp.blob();
       const coreURL=URL.createObjectURL(coreBlob);
@@ -229,7 +251,11 @@ convertBtn.addEventListener('click',async()=>{
     const inputData=await fetchFile(selectedFile);
     await ffmpeg.writeFile('input'+selectedFile.name.match(/\.[^.]+$/)[0],inputData);
 
-    const args=['-i','input'+selectedFile.name.match(/\.[^.]+$/)[0],...qualityPresets[mode][quality],'output'+ext];
+    const args=['-i','input'+selectedFile.name.match(/\.[^.]+$/)[0]];
+    if(mode==='mp4'&&resolution!=='original'){
+      args.push('-vf',`scale=-2:${resolution}`);
+    }
+    args.push(...qualityPresets[mode][quality],'output'+ext);
     addLog('Komut: ffmpeg '+args.join(' '));
 
     setProgress(15,'Dönüştürme başlıyor...');
